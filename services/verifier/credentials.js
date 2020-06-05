@@ -1,5 +1,5 @@
 module.exports = function (fastify, opts, next) {
-  fastify.get('/verifier/credentials', {
+  fastify.post('/verifier/credentials', {
     schema: {
       tags: ['v0.0.0'],
       summary: 'Verification Result',
