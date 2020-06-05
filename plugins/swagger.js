@@ -1,65 +1,29 @@
-
 const fp = require('fastify-plugin');
 const swagger = require('fastify-swagger');
 
 // the use of fastify-plugin is required to be able
 // to export the decorators to the outer scope
-
 module.exports = fp((fastify, opts, next) => {
-  // fastify.decorate('someSupport', function () {
-  //   return 'hugs'
-  // })
   fastify.register(swagger, {
-    routePrefix: '/documentation',
+    routePrefix: '/api/docs',
     swagger: {
       info: {
-        title: 'Test swagger',
-        description: 'testing the fastify swagger api',
-        version: '0.1.0',
-      },
-      externalDocs: {
-        url: 'https://swagger.io',
-        description: 'Find more info here',
-      },
-      host: 'localhost',
-      schemes: ['http'],
-      consumes: ['application/json'],
-      produces: ['application/json'],
-      tags: [
-        { name: 'user', description: 'User related end-points' },
-        { name: 'code', description: 'Code related end-points' },
-      ],
-      definitions: {
-        User: {
-          $id: 'User',
-          type: 'object',
-          required: ['id', 'email'],
-          properties: {
-            id: { type: 'string', format: 'uuid' },
-            firstName: { type: 'string', nullable: true },
-            lastName: { type: 'string', nullable: true },
-            email: { type: 'string', format: 'email' },
-          },
+        title: 'Dock VC HTTP API',
+        description: 'Dock\'s implementation of the [w3c verifier api](https://github.com/w3c-ccg/vc-verifier-http-api) and the [w3c issuer api](https://github.com/w3c-ccg/vc-issuer-http-api), a HTTP API for the Verifiable Credentials Data Model.',
+        version: '0.0.0',
+        license: {
+          name: 'W3C verifier API (TODO: change this?)',
+          url: 'https://github.com/w3c-ccg/vc-verifier-http-api',
+        },
+        contact: {
+          name: 'GitHub Source Code',
+          url: 'https://github.com/docknetwork/dock-vc-api',
         },
       },
-      securityDefinitions: {
-        apiKey: {
-          type: 'apiKey',
-          name: 'apiKey',
-          in: 'header',
-        },
-      },
+      basePath: '',
     },
     exposeRoute: true,
   });
 
   next();
 });
-
-// If you prefer async/await, use the following
-//
-// module.exports = fp(async function (fastify, opts) {
-//   fastify.decorate('someSupport', function () {
-//     return 'hugs'
-//   })
-// })
