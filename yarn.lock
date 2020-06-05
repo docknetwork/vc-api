@@ -1230,6 +1230,14 @@ fastify-cli@^1.5.0:
     resolve-from "^4.0.0"
     yargs-parser "^16.0.0"
 
+fastify-cors@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/fastify-cors/-/fastify-cors-3.0.3.tgz#c1b2227983d7b02feff73fd642d81041adfbe124"
+  integrity sha512-SDMa+GtyTTAU7pWZwY4fukb/VwCZ4c30p0oEaE7/d/+VCvceB1+NzW2udp2dSZZfWR7J1kUookCpw2dLmtAsSw==
+  dependencies:
+    fastify-plugin "^1.6.0"
+    vary "^1.1.2"
+
 fastify-plugin@^1.5.0, fastify-plugin@^1.6.0:
   version "1.6.1"
   resolved "https://registry.yarnpkg.com/fastify-plugin/-/fastify-plugin-1.6.1.tgz#122f5a5eeb630d55c301713145a9d188e6d5dd5b"
@@ -3830,6 +3838,11 @@ validate-npm-package-license@^3.0.1:
   dependencies:
     spdx-correct "^3.0.0"
     spdx-expression-parse "^3.0.0"
+
+vary@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
+  integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
 verror@1.10.0:
   version "1.10.0"
