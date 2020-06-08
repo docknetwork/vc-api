@@ -1,28 +1,15 @@
 // TODO: assign proper schemas for swagger https://github.com/transmute-industries/vc-http-api/blob/master/vc-http-api.yml
 
 // Import Dock SDK utils
-const {UniversalResolver} = require('@docknetwork/sdk/resolver');
 const {verifyCredential} = require('@docknetwork/sdk/utils/vc');
 const {DockAPI} = require('@docknetwork/sdk');
 
-// Use universal resolver
-const universalResolverUrl = 'https://uniresolver.io';
-const resolver = new UniversalResolver(universalResolverUrl);
-
-// Hardcoded testnet node address for now, but provide config options in .env later
-const nodeAddress = 'wss://testnet-node.dock.io:9950';
-// const nodeAddress = 'ws://localhost:9944';
-
-function getCheckType(result) {
-  if (result.proof) {
-    return 'proof';
-  }
-
-  return 'unknown';
-}
+// Import helpers
+const nodeAddress = require('../../helpers/node-address');
+const getCheckType = require('../../helpers/check-type');
+const resolver = require('../../helpers/resolver');
 
 async function handleVerifyCredential(request, reply) {
-  // const dock = null;
   const dock = new DockAPI();
   try {
     await dock.init({
@@ -34,8 +21,6 @@ async function handleVerifyCredential(request, reply) {
 
   const options = request.body.options || {};
   const {verifiableCredential} = request.body;
-  // console.log('verifiableCredential', verifiableCredential)
-  // console.log('options', options)
 
   try {
     const verifyResult = await verifyCredential(verifiableCredential, {
@@ -45,8 +30,6 @@ async function handleVerifyCredential(request, reply) {
       schemaApi: { dock },
       revocationApi: { dock }
     });
-
-    // console.log('verifyResult', verifyResult)
 
     if (verifyResult.verified) {
       const checks = [];
@@ -62,7 +45,6 @@ async function handleVerifyCredential(request, reply) {
     } else if (verifyResult.results) {
       const failedChecks = [];
       verifyResult.results.forEach(result => {
-        // console.log('result fail: ', result);
         if (!result.verified) {
           const checkType = getCheckType(result);
           let checkData = {};

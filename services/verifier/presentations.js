@@ -1,28 +1,15 @@
 // TODO: assign proper schemas for swagger https://github.com/transmute-industries/vc-http-api/blob/master/vc-http-api.yml
 
 // Import Dock SDK utils
-const {UniversalResolver} = require('@docknetwork/sdk/resolver');
 const {verifyPresentation} = require('@docknetwork/sdk/utils/vc');
 const {DockAPI} = require('@docknetwork/sdk');
 
-// Use universal resolver
-const universalResolverUrl = 'https://uniresolver.io';
-const resolver = new UniversalResolver(universalResolverUrl);
-
-// Hardcoded testnet node address for now, but provide config options in .env later
-const nodeAddress = 'wss://testnet-node.dock.io:9950';
-// const nodeAddress = 'ws://localhost:9944';
-
-function getCheckType(result) {
-  if (result.proof) {
-    return 'proof';
-  }
-
-  return 'unknown';
-}
+// Import helpers
+const nodeAddress = require('../../helpers/node-address');
+const getCheckType = require('../../helpers/check-type');
+const resolver = require('../../helpers/resolver');
 
 async function handleVerifyPresentation(request, reply) {
-  // const dock = null;
   const dock = new DockAPI();
   try {
     await dock.init({
@@ -35,9 +22,6 @@ async function handleVerifyPresentation(request, reply) {
   const options = request.body.options || {};
   const {verifiablePresentation} = request.body;
   const {challenge, domain} = options;
-
-  console.log('verifiablePresentation', JSON.stringify(verifiablePresentation, null, 2))
-  console.log('options', options)
 
   try {
     const result = await verifyPresentation(verifiablePresentation, {
@@ -53,40 +37,34 @@ async function handleVerifyPresentation(request, reply) {
     const credentialResults = result.credentialResults.results;
     const presentationResult = result.presentationResult.results;
 
-    console.log('result', result);
-
     if (result.verified) {
       const checks = [];
-      if (presentationResult && presentationResult.length) {
-        presentationResult.forEach(result => {
-          checks.push(getCheckType(result));
-        });
-      } else {
-        credentialResults.forEach(result => {
-          checks.push(getCheckType(result));
-        });
-      }
+      const results = (presentationResult && presentationResult.length) ? presentationResult : credentialResults;
+      results.forEach(result => {
+        checks.push(getCheckType(result));
+      });
 
       reply.send({
         checks,
       });
     } else {
-      const failedChecks = [];
-      // TODO: build list of failed checks from presentation result and credential result?
-      // if (result.credentialResults.verified) {
-      //
-      // }
+      const checks = [];
+      const results = (presentationResult && presentationResult.length) ? presentationResult : credentialResults;
+      results.forEach(result => {
+        if (!result.verified) {
+          checks.push(getCheckType(result));
+        }
+      });
 
       reply
         .code(400)
         .send({
-          checks: failedChecks,
+          checks,
           error: result.error
         });
     }
 
   } catch (e) {
-    console.error('server error', e)
     reply
       .code(400)
       .send({
