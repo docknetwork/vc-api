@@ -8,8 +8,8 @@ const universalResolverUrl = 'https://uniresolver.io';
 const resolver = new UniversalResolver(universalResolverUrl);
 
 // Hardcoded testnet node address for now, but provide config options in .env later
-// const nodeAddress = 'wss://testnet-node.dock.io:9950';
-const nodeAddress = 'ws://localhost:9944';
+const nodeAddress = 'wss://testnet-node.dock.io:9950';
+// const nodeAddress = 'ws://localhost:9944';
 
 function getCheckType(result) {
   if (result.proof) {
@@ -21,15 +21,15 @@ function getCheckType(result) {
 
 // TODO: assign proper schemas for swagger https://github.com/transmute-industries/vc-http-api/blob/master/vc-http-api.yml
 async function handleVerify(request, reply) {
-  const dock = null;
-  // const dock = new DockAPI();
-  // try {
-  //   await dock.init({
-  //     address: nodeAddress
-  //   });
-  // } catch (e) {
-  //   console.error('Connecting to node failed', e);
-  // }
+  // const dock = null;
+  const dock = new DockAPI();
+  try {
+    await dock.init({
+      address: nodeAddress
+    });
+  } catch (e) {
+    console.error('Connecting to node failed', e);
+  }
 
   const {verifiableCredential, options} = request.body;
   console.log('verifiableCredential', verifiableCredential)
@@ -44,16 +44,20 @@ async function handleVerify(request, reply) {
       revocationApi: { dock }
     });
 
+    console.log('verifyResult', verifyResult)
+
     if (verifyResult.verified) {
       const checks = [];
-      verifyResult.results.forEach(result => {
-        checks.push(getCheckType(result));
-      });
+      if (verifyResult.results) {
+        verifyResult.results.forEach(result => {
+          checks.push(getCheckType(result));
+        });
+      }
 
       reply.send({
         checks,
       });
-    } else {
+    } else if (verifyResult.results) {
       const failedCheckes = [];
       verifyResult.results.forEach(result => {
         console.log('result fail: ', result);
@@ -73,24 +77,35 @@ async function handleVerify(request, reply) {
         });
       });
 
-      // console.log('error', verifyResult.error);
-
       reply
         .code(400)
         .send({
           checks: failedCheckes
         });
+    } else {
+    // console.log('error', verifyResult.error);
+      reply
+        .code(400)
+        .send({
+          checks: options.checks || [],
+          error: verifyResult.error.message || verifyResult.error
+        });
     }
   } catch (e) {
-    // TODO: send 500 error response
-    console.log('Error', e)
+    console.log('server error', e)
+    reply
+      .code(400)
+      .send({
+        checks: options.checks || [],
+        error: e.message || e
+      });
   }
 
-  // try {
-  //   await dock.disconnect();
-  // } catch (e) {
-  //   console.error('Disconnect from node failed', e);
-  // }
+  try {
+    await dock.disconnect();
+  } catch (e) {
+    console.error('Disconnect from node failed', e);
+  }
 }
 
 module.exports = function (fastify, opts, next) {
