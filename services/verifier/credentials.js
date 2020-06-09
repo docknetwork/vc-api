@@ -1,8 +1,8 @@
 // TODO: assign proper schemas for swagger https://github.com/transmute-industries/vc-http-api/blob/master/vc-http-api.yml
 
 // Import Dock SDK utils
-const {verifyCredential} = require('@docknetwork/sdk/utils/vc');
-const {DockAPI} = require('@docknetwork/sdk');
+const { verifyCredential } = require('@docknetwork/sdk/utils/vc');
+const { DockAPI } = require('@docknetwork/sdk');
 
 // Import helpers
 const nodeAddress = require('../../helpers/node-address');
@@ -13,14 +13,14 @@ async function handleVerifyCredential(request, reply) {
   const dock = new DockAPI();
   try {
     await dock.init({
-      address: nodeAddress
+      address: nodeAddress,
     });
   } catch (e) {
     console.error('Connecting to node failed', e);
   }
 
   const options = request.body.options || {};
-  const {verifiableCredential} = request.body;
+  const { verifiableCredential } = request.body;
 
   try {
     const verifyResult = await verifyCredential(verifiableCredential, {
@@ -28,13 +28,13 @@ async function handleVerifyCredential(request, reply) {
       compactProof: true,
       forceRevocationCheck: true,
       schemaApi: { dock },
-      revocationApi: { dock }
+      revocationApi: { dock },
     });
 
     if (verifyResult.verified) {
       const checks = [];
       if (verifyResult.results) {
-        verifyResult.results.forEach(result => {
+        verifyResult.results.forEach((result) => {
           checks.push(getCheckType(result));
         });
       }
@@ -44,10 +44,10 @@ async function handleVerifyCredential(request, reply) {
       });
     } else if (verifyResult.results) {
       const failedChecks = [];
-      verifyResult.results.forEach(result => {
+      verifyResult.results.forEach((result) => {
         if (!result.verified) {
           const checkType = getCheckType(result);
-          let checkData = {};
+          const checkData = {};
 
           // Proof check
           if (result.proof) {
@@ -57,7 +57,7 @@ async function handleVerifyCredential(request, reply) {
           failedChecks.push({
             check: checkType,
             error: result.verified ? undefined : (result.error.message || result.error),
-            ...checkData
+            ...checkData,
           });
         }
       });
@@ -65,14 +65,14 @@ async function handleVerifyCredential(request, reply) {
       reply
         .code(400)
         .send({
-          checks: failedChecks
+          checks: failedChecks,
         });
     } else {
       reply
         .code(400)
         .send({
           checks: options.checks || [],
-          error: verifyResult.error.message || verifyResult.error
+          error: verifyResult.error.message || verifyResult.error,
         });
     }
   } catch (e) {
@@ -80,7 +80,7 @@ async function handleVerifyCredential(request, reply) {
       .code(400)
       .send({
         checks: options.checks || [],
-        error: e.message || e
+        error: e.message || e,
       });
   }
 
@@ -158,6 +158,10 @@ module.exports = function (fastify, opts, next) {
             type: 'object',
             properties: {
               checks: { type: 'array' },
+              domain: { type: 'string' },
+              challenge: { type: 'string' },
+              proofPurpose: { type: 'string' },
+              verificationMethod: { type: 'string' },
             },
             example: {
               checks: ['proof'],
