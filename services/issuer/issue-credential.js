@@ -123,8 +123,8 @@ const getKeyDocFromOptions = async options => {
 async function handleIssueCredential(request, reply) {
   const { credential } = request.body;
 
-  console.log('credential', JSON.stringfy(credential, null, 2))
-  console.log('options', JSON.stringfy(request.body.options, null, 2))
+  console.log('credential', JSON.stringify(credential, null, 2))
+  console.log('options', JSON.stringify(request.body.options, null, 2))
 
   try {
     const dock = new DockAPI();
