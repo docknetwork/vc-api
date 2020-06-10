@@ -121,22 +121,24 @@ const getKeyDocFromOptions = async options => {
 
 // TODO: support all options in schema
 async function handleIssueCredential(request, reply) {
-  try {
-    // TODO: donr think we need to connec tto node herfe, just init keyring
-    const dock = new DockAPI();
-    try {
-      await dock.init({
-        address: nodeAddress,
-      });
-    } catch (e) {
-      console.error('Connecting to node failed', e);
-    }
+  const { credential } = request.body;
 
-    const { credential, options } = request.body;
+  console.log('credential', JSON.stringfy(credential, null, 2))
+  console.log('options', JSON.stringfy(request.body.options, null, 2))
+
+  try {
+    const dock = new DockAPI();
+    await dock.initKeyring();
+
+    // defualt options if none provided, rquired by test
+    const options = Object.assign({
+      issuanceDate: '2019-12-11T03:50:55Z',
+      proofPurpose: 'assertionMethod',
+      verificationMethod:
+          'did:web:vc.transmute.world#z6MksHh7qHWvybLg5QTPPdG2DgEjjduBDArV9EF9mRiRzMBN',
+    }, request.body.options || {});
 
     // TODO: check if options.issuer is even used, doesnt sem to be needed when passing methods?
-
-    // TODO: support no options object
 
     // hack around static interp api
     if (options.assertionMethod) {
@@ -158,23 +160,14 @@ async function handleIssueCredential(request, reply) {
 
     const pair = createPair({ toSS58: dock.keyring.encodeAddress, type: 'ed25519' }, { publicKey, secretKey }, meta, encoded);
     keyDoc.keypair = dock.keyring.addPair(pair);
-    dock.setAccount(keyDoc.keypair); // TODO: check if this is even needed, dont tink itis because dont think we do any txs
-
-    // console.log('keyDoc', keyDoc)
-    // console.log('keyDoc.keypair', keyDoc.keypair.toJson())
 
     const issuedCredential = await issueCredential(keyDoc, credential);
 
     reply
       .code(201)
       .send(issuedCredential);
-
-    try {
-      await dock.disconnect();
-    } catch (e) {
-      console.error('Disconnect from node failed', e);
-    }
   } catch (e) {
+    console.error(e);
     reply
       .code(400)
       .send({ message: e.message });
