@@ -11,138 +11,234 @@ const getKeyDoc = require('@docknetwork/sdk/utils/vc/helpers');
 // Import helpers
 const nodeAddress = require('../../helpers/node-address');
 
+const createPair = require('@polkadot/keyring/pair/index').default;
 
+const b58 = require('bs58');
 
 const { createKeyDetail } = require('@docknetwork/sdk/utils/did');
-const { getPublicKeyFromKeyringPair } = require('@docknetwork/sdk/utils/misc');
 
 
-async function registerNewDIDUsingPair(dockAPI, did, pair) {
-  const publicKey = getPublicKeyFromKeyringPair(pair);
+// hardcoded DIDs for testing
+const unlockedDIDs = [{
+    "@context": [
+        "https://w3id.org/did/v0.11"
+    ],
+    "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+    "publicKey": [
+        {
+            "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+            "type": "Ed25519VerificationKey2018",
+            "controller": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+            "publicKeyBase58": "5yKdnU7ToTjAoRNDzfuzVTfWBH38qyhE1b9xh4v8JaWF",
+            "privateKeyBase58": "28xXA4NyCQinSJpaZdSuNBM4kR2GqYb8NPqAtZoGCpcRYWBcDXtzVAzpZ9BAfgV334R2FC383fiHaWWWAacRaYGs"
+        }
+    ],
+    "authentication": [
+        "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
+    ],
+    "assertionMethod": [
+        "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
+    ],
+    "capabilityDelegation": [
+        "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
+    ],
+    "capabilityInvocation": [
+        "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
+    ],
+    "keyAgreement": [
+        {
+            "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#zC68u6qt8EEiaCuuZKWLQ3hAkrQ6K1BMKuWSerjLCvyCKc",
+            "type": "X25519KeyAgreementKey2019",
+            "controller": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+            "publicKeyBase58": "6eBPUhK2ryHmoras6qq5Y15Z9pW3ceiQcZMptFQXrxDQ"
+        }
+    ]
+}];
 
-  // The controller is same as the DID
-  const keyDetail = createKeyDetail(publicKey, did);
-  const transaction = dockAPI.did.new(did, keyDetail);
-  return dockAPI.sendTransaction(transaction);
-}
 
-// TODO: load form env
-const TestAccountURI = '//Alice';
+
+
+
+
+
+// TOOD: move these methods into sdk
+const getUnlockedVerificationMethod = async verificationMethod => {
+  let unlockedVerificationMethod;
+  Object.values(unlockedDIDs).forEach(didDocument => {
+    const bucket = didDocument.publicKey || didDocument.assertionMethod;
+    bucket.forEach(publicKey => {
+      if (publicKey.id === verificationMethod) {
+        unlockedVerificationMethod = publicKey;
+      }
+    });
+  });
+
+  // TODO: use SDK resolver to get did doc
+  // if (!unlockedVerificationMethod) {
+  //   const baseUrl = 'https://uniresolver.io/1.0/identifiers/';
+  //   const result = await getJson(baseUrl + verificationMethod);
+  //   const { didDocument } = result;
+  //   const bucket = didDocument.publicKey || didDocument.assertionMethod;
+  //   bucket.forEach(publicKey => {
+  //     if (publicKey.id === verificationMethod) {
+  //       unlockedVerificationMethod = publicKey;
+  //     }
+  //   });
+  // }
+
+  if (!unlockedVerificationMethod) {
+    throw new Error(`Can't find verification method for ${verificationMethod}`);
+  }
+
+  return unlockedVerificationMethod;
+};
+
+const { Ed25519KeyPair } = require('crypto-ld');
+
+const getKeyFromVerificationMethod = async verificationMethod => {
+  if (!verificationMethod) {
+    throw new Error('No verificationMethod given');
+  }
+  switch (verificationMethod.type) {
+    case 'Ed25519VerificationKey2018':
+      return new Ed25519KeyPair({
+        ...verificationMethod,
+      });
+    default:
+      throw new Error(`No Key for: ${verificationMethod.type}`);
+  }
+};
+
+const getKeyDocFromOptions = async options => {
+  const vmFromProof = options.verificationMethod || options.assertionMethod;
+  const verificationMethod = await getUnlockedVerificationMethod(vmFromProof);
+  const key = await getKeyFromVerificationMethod(verificationMethod);
+  if (options.issuanceDate) {
+    key.date = options.issuanceDate;
+  }
+  return key;
+};
 
 // TODO: support all options in schema
 async function handleIssueCredential(request, reply) {
-  const dock = new DockAPI();
   try {
-    await dock.init({
-      address: nodeAddress,
-    });
+    // TODO: donr think we need to connec tto node herfe, just init keyring
+    const dock = new DockAPI();
+    try {
+      await dock.init({
+        address: nodeAddress,
+      });
+    } catch (e) {
+      console.error('Connecting to node failed', e);
+    }
+
+    const { credential, options } = request.body;
+
+    // TODO: check if options.issuer is even used, doesnt sem to be needed when passing methods?
+
+    // TODO: support no options object
+
+    // hack around static interp api
+    if (options.assertionMethod) {
+      // eslint-disable-next-line
+      options.verificationMethod = options.assertionMethod;
+    }
+
+    if (!options.proofPurpose) {
+      options.proofPurpose = 'assertionMethod';
+    }
+
+    const keyDoc = await getKeyDocFromOptions(options);
+
+    // create and set keypair
+    const publicKey = new Uint8Array(b58.decode(keyDoc.publicKeyBase58));
+    const secretKey = new Uint8Array(b58.decode(keyDoc.privateKeyBase58));
+    const encoded = undefined;
+    const meta = null;
+
+    const pair = createPair({ toSS58: dock.keyring.encodeAddress, type: 'ed25519' }, { publicKey, secretKey }, meta, encoded);
+    keyDoc.keypair = dock.keyring.addPair(pair);
+    dock.setAccount(keyDoc.keypair); // TODO: check if this is even needed, dont tink itis because dont think we do any txs
+
+    // console.log('keyDoc', keyDoc)
+    // console.log('keyDoc.keypair', keyDoc.keypair.toJson())
+
+    const issuedCredential = await issueCredential(keyDoc, credential);
+
+    reply
+      .code(201)
+      .send(issuedCredential);
+
+    try {
+      await dock.disconnect();
+    } catch (e) {
+      console.error('Disconnect from node failed', e);
+    }
   } catch (e) {
-    console.error('Connecting to node failed', e);
-  }
-
-  const { credential, options } = request.body;
-    console.log('handleIssueCredential', credential, options);
-
-
-// The keyring should be initialized before any test begins as this suite is testing revocation
-const account = dock.keyring.addFromUri(TestAccountURI);
-dock.setAccount(account);
-
-// test create random did/seed
-// const issuer1DID = createNewDockDID();
-// const issuer1KeySeed = randomAsHex(32);
-
-const issuer1DID = 'did:dock:5E1TUtdePxgdU5nxoRbQS5uq3VwTt1LNZHxiRf2tER5Cptwr'; // this should be passed in credential options.issuer?
-const issuer1KeySeed = '0x7dba80e630fc0a27bcd6ffb67ef4f464745c102a0b1800b74f8725f6dc432c21';
-
-// get pair
-const pair1 = dock.keyring.addFromUri(issuer1KeySeed, null, 'ed25519');
-
-// create DID with ed25519 key, test
-// await registerNewDIDUsingPair(dock, issuer1DID, pair1);
-
-    console.log('using did', issuer1DID)
-    console.log('using ed25519 key', issuer1KeySeed)
-
-
-
-
-  const issuerKey = getKeyDoc(issuer1DID, pair1, 'Ed25519VerificationKey2018');
-
-
-  // issueCredential sets issuer to controller value
-
-  // need to get suite and/or keydoc from options provided, see:
-  // https://github.com/transmute-industries/vc.transmute.world/blob/master/src/services/suiteManager.js#L65
-  // https://github.com/transmute-industries/vc.transmute.world/blob/master/src/services/agent.js#L32
-  // right now sdk only supports getting suite from keydoc which is got from the raw key data
-
-  const issuedCredential = await issueCredential(issuerKey, credential);
-  console.log('issuedCredential', issuedCredential)
-
-  reply.send({
-    test: 'handleIssueCredential',
-    credential,
-    options,
-    issuedCredential,
-    issuer1DID,
-    issuer1KeySeed,
-  });
-
-  try {
-    await dock.disconnect();
-  } catch (e) {
-    console.error('Disconnect from node failed', e);
+    reply
+      .code(400)
+      .send({ message: e.message });
   }
 }
+
+const routeMetadata = {
+  type: 'object',
+  properties: {
+    credential: {
+      type: 'object',
+      example: {
+        '@context': [
+          'https://www.w3.org/2018/credentials/v1',
+          'https://www.w3.org/2018/credentials/examples/v1',
+        ],
+        id: 'http://example.gov/credentials/3732',
+        type: ['VerifiableCredential', 'UniversityDegreeCredential'],
+        issuer:
+            'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
+        issuanceDate: '2020-03-10T04:24:12.164Z',
+        credentialSubject: {
+          id:
+              'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
+          degree: {
+            type: 'BachelorDegree',
+            name: 'Bachelor of Science and Arts',
+          },
+        },
+      },
+    },
+    options: {
+      type: 'object',
+      properties: {
+        issuer: { oneOf: [{ type: 'string' }, { type: 'object' }] },
+        issuanceDate: { type: 'string' },
+        assertionMethod: { type: 'string' },
+      },
+      example: {
+        issuanceDate: '2019-12-11T03:50:55Z',
+        assertionMethod:
+            'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
+      },
+    },
+  },
+};
 
 module.exports = function (fastify, opts, next) {
   fastify.post('/credentials/issueCredential', {
     schema: {
       tags: ['v0.0.0'],
       summary: 'Issues a credential and returns it in the response body.',
-      body: {
-        type: 'object',
-        properties: {
-          credential: {
-            type: 'object',
-            example: {
-              '@context': [
-                'https://www.w3.org/2018/credentials/v1',
-                'https://www.w3.org/2018/credentials/examples/v1',
-              ],
-              id: 'http://example.gov/credentials/3732',
-              type: ['VerifiableCredential', 'UniversityDegreeCredential'],
-              issuer:
-                  'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
-              issuanceDate: '2020-03-10T04:24:12.164Z',
-              credentialSubject: {
-                id:
-                    'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
-                degree: {
-                  type: 'BachelorDegree',
-                  name: 'Bachelor of Science and Arts',
-                },
-              },
-            },
-          },
-          options: {
-            type: 'object',
-            properties: {
-              issuer: { oneOf: [{ type: 'string' }, { type: 'object' }] },
-              issuanceDate: { type: 'string' },
-              assertionMethod: { type: 'string' },
-            },
-            example: {
-              issuanceDate: '2019-12-11T03:50:55Z',
-              assertionMethod:
-                  'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
-            },
-          },
-        },
-      },
+      body: routeMetadata,
     },
   }, handleIssueCredential);
+
+  fastify.post('/issue/credentials', {
+    schema: {
+      tags: ['v0.1.0'],
+      summary: 'Issues a credential and returns it in the response body.',
+      body: routeMetadata,
+    },
+  }, handleIssueCredential);
+
 
   next();
 };
