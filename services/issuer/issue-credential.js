@@ -111,7 +111,6 @@ async function handleIssueCredential(request, reply) {
       .code(201)
       .send(issuedCredential);
   } catch (e) {
-    console.error(e);
     reply
       .code(400)
       .send({ message: e.message });
