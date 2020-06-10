@@ -167,7 +167,7 @@
     "@polkadot/util" "2.10.1"
     "@polkadot/util-crypto" "2.10.1"
 
-"@polkadot/keyring@^2.10.1":
+"@polkadot/keyring@^2.10.1", "@polkadot/keyring@^2.13.1":
   version "2.13.1"
   resolved "https://registry.yarnpkg.com/@polkadot/keyring/-/keyring-2.13.1.tgz#2607d790ac1df0ee1d3508aa47588f425331189f"
   integrity sha512-Vm3ohFyvPAKYFJsUtphYQ0zYgD6VlOV2e6yaHqq8e6q7opLdHcpkE11OSeEnaYs7kUdzs873VH5GTYP2pTKJFQ==
@@ -2848,20 +2848,8 @@ jsonld-signatures@^4.4.0:
     security-context "^4.0.0"
     serialize-error "^4.1.0"
 
-"jsonld-signatures@git+https://github.com/docknetwork/jsonld-signatures.git#avoid-extendContextLoader":
-  version "5.0.2-0"
-  resolved "git+https://github.com/docknetwork/jsonld-signatures.git#416082535cac1f0a2a36bd0b665faca5fc479584"
-  dependencies:
-    base64url "^3.0.1"
-    crypto-ld "^3.7.0"
-    jsonld "^2.0.2"
-    node-forge "^0.9.1"
-    security-context "^4.0.0"
-    serialize-error "^5.0.0"
-
 "jsonld-signatures@https://github.com/docknetwork/jsonld-signatures#avoid-extendContextLoader":
   version "5.0.2-0"
-  uid "416082535cac1f0a2a36bd0b665faca5fc479584"
   resolved "https://github.com/docknetwork/jsonld-signatures#416082535cac1f0a2a36bd0b665faca5fc479584"
   dependencies:
     base64url "^3.0.1"
@@ -4908,9 +4896,9 @@ vary@^1.1.2:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
-"vc-js@git+https://github.com/docknetwork/vc-js.git#avoid-extendContextLoader":
+"vc-js@https://github.com/docknetwork/vc-js#avoid-extendContextLoader":
   version "0.5.1-0"
-  resolved "git+https://github.com/docknetwork/vc-js.git#98ad8eac68bbc58ad26584dc8aae2ce710fcf320"
+  resolved "https://github.com/docknetwork/vc-js#98ad8eac68bbc58ad26584dc8aae2ce710fcf320"
   dependencies:
     commander "^2.20.3"
     credentials-context "^1.0.0"
