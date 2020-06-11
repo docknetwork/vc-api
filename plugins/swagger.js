@@ -12,7 +12,7 @@ module.exports = fp((fastify, opts, next) => {
         description: 'Dock\'s implementation of the [w3c verifier api](https://github.com/w3c-ccg/vc-verifier-http-api) and the [w3c issuer api](https://github.com/w3c-ccg/vc-issuer-http-api), a HTTP API for the Verifiable Credentials Data Model.',
         version: '0.0.0',
         license: {
-          name: 'W3C verifier API (TODO: change this?)',
+          name: 'W3C verifier API',
           url: 'https://github.com/w3c-ccg/vc-verifier-http-api',
         },
         contact: {
