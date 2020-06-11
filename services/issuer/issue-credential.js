@@ -9,7 +9,20 @@ const createPair = require('@polkadot/keyring/pair/index').default;
 const unlockedDIDs = require('../../helpers/unlocked-dids');
 const resolver = require('../../helpers/resolver');
 
-// TOOD: move these methods into sdk
+async function getKeyFromVerificationMethod(verificationMethod) {
+  if (!verificationMethod) {
+    throw new Error('No verificationMethod given');
+  }
+  switch (verificationMethod.type) {
+    case 'Ed25519VerificationKey2018':
+      return new Ed25519KeyPair({
+        ...verificationMethod,
+      });
+    default:
+      throw new Error(`No Key for: ${verificationMethod.type}`);
+  }
+};
+
 async function getUnlockedVerificationMethod(verificationMethod, resolver) {
   let unlockedVerificationMethod;
   Object.values(unlockedDIDs).forEach((didDocument) => {
@@ -39,20 +52,6 @@ async function getUnlockedVerificationMethod(verificationMethod, resolver) {
 
   return unlockedVerificationMethod;
 }
-
-async function getKeyFromVerificationMethod(verificationMethod) {
-  if (!verificationMethod) {
-    throw new Error('No verificationMethod given');
-  }
-  switch (verificationMethod.type) {
-    case 'Ed25519VerificationKey2018':
-      return new Ed25519KeyPair({
-        ...verificationMethod,
-      });
-    default:
-      throw new Error(`No Key for: ${verificationMethod.type}`);
-  }
-};
 
 const getKeyDocFromOptions = async (options, resolver) => {
   const vmFromProof = options.verificationMethod || options.assertionMethod;
