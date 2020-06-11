@@ -10,7 +10,7 @@ const unlockedDIDs = require('../../helpers/unlocked-dids');
 const resolver = require('../../helpers/resolver');
 
 // TOOD: move these methods into sdk
-async function getUnlockedVerificationMethod(verificationMethod) {
+async function getUnlockedVerificationMethod(verificationMethod, resolver) {
   let unlockedVerificationMethod;
   Object.values(unlockedDIDs).forEach((didDocument) => {
     const bucket = didDocument.publicKey || didDocument.assertionMethod;
@@ -54,9 +54,9 @@ async function getKeyFromVerificationMethod(verificationMethod) {
   }
 };
 
-const getKeyDocFromOptions = async (options) => {
+const getKeyDocFromOptions = async (options, resolver) => {
   const vmFromProof = options.verificationMethod || options.assertionMethod;
-  const verificationMethod = await getUnlockedVerificationMethod(vmFromProof);
+  const verificationMethod = await getUnlockedVerificationMethod(vmFromProof, resolver);
   const key = await getKeyFromVerificationMethod(verificationMethod);
   if (options.issuanceDate) {
     key.date = options.issuanceDate;
@@ -90,7 +90,7 @@ async function handleIssueCredential(request, reply) {
     }
 
     // Create and set keypair
-    const keyDoc = await getKeyDocFromOptions(options);
+    const keyDoc = await getKeyDocFromOptions(options, resolver);
     const publicKey = new Uint8Array(b58.decode(keyDoc.publicKeyBase58));
     const secretKey = new Uint8Array(b58.decode(keyDoc.privateKeyBase58));
     const keyType = 'ed25519';

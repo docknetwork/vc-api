@@ -94,25 +94,6 @@ module.exports = function (fastify, opts, next) {
     schema: {
       tags: ['v0.0.0'],
       summary: 'Verifies a verifiableCredential and returns a verificationResult in the response body.',
-      response: {
-        200: {
-          description: 'The verification was successful.',
-          type: 'object',
-          example: {
-            "checks": [
-              "proof"
-            ],
-          }
-        },
-        400: {
-          description: 'The verification failed.',
-          type: 'object',
-        },
-        500: {
-          description: 'Error!',
-          type: 'object',
-        }
-      },
       body: {
         type: 'object',
         properties: {
