@@ -1,5 +1,3 @@
-// TODO: assign proper schemas for swagger https://github.com/transmute-industries/vc-http-api/blob/master/vc-http-api.yml
-
 // Import Dock SDK utils
 const { verifyPresentation } = require('@docknetwork/sdk/utils/vc');
 const { DockAPI } = require('@docknetwork/sdk');
@@ -84,29 +82,25 @@ module.exports = function (fastify, opts, next) {
     schema: {
       tags: ['v0.0.0'],
       summary: 'Verify a given presentation.',
-      // TODO: set proper response schemas
-      // response: {
-      //   200: {
-      //     description: '	The verification was successful.',
-      //     type: 'object',
-      //     example: {
-      //       "checks": [
-      //         "proof"
-      //       ],
-      //     },
-      //     properties: {
-      //       checks: { type: 'array' },
-      //     }
-      //   },
-      //   400: {
-      //     description: 'The verification failed.',
-      //     type: 'object',
-      //   },
-      //   500: {
-      //     description: 'Error!',
-      //     type: 'object',
-      //   }
-      // },
+      response: {
+        200: {
+          description: 'The verification was successful.',
+          type: 'object',
+          example: {
+            "checks": [
+              "proof"
+            ],
+          },
+        },
+        400: {
+          description: 'The verification failed.',
+          type: 'object',
+        },
+        500: {
+          description: 'Error!',
+          type: 'object',
+        }
+      },
       body: {
         type: 'object',
         properties: {

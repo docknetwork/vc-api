@@ -1,5 +1,3 @@
-// TODO: assign proper schemas for swagger https://github.com/transmute-industries/vc-http-api/blob/master/vc-http-api.yml
-
 // Import Dock SDK utils
 const { DockAPI } = require('@docknetwork/sdk');
 const { issueCredential } = require('@docknetwork/sdk/utils/vc');
@@ -9,6 +7,7 @@ const b58 = require('bs58');
 const { Ed25519KeyPair } = require('crypto-ld');
 const createPair = require('@polkadot/keyring/pair/index').default;
 const unlockedDIDs = require('../../helpers/unlocked-dids');
+const resolver = require('../../helpers/resolver');
 
 // TOOD: move these methods into sdk
 async function getUnlockedVerificationMethod(verificationMethod) {
@@ -22,21 +21,20 @@ async function getUnlockedVerificationMethod(verificationMethod) {
     });
   });
 
-  // TODO: use SDK resolver to get did doc
-  // if (!unlockedVerificationMethod) {
-  //   const baseUrl = 'https://uniresolver.io/1.0/identifiers/';
-  //   const result = await getJson(baseUrl + verificationMethod);
-  //   const { didDocument } = result;
-  //   const bucket = didDocument.publicKey || didDocument.assertionMethod;
-  //   bucket.forEach(publicKey => {
-  //     if (publicKey.id === verificationMethod) {
-  //       unlockedVerificationMethod = publicKey;
-  //     }
-  //   });
-  // }
+  if (!unlockedVerificationMethod) {
+    const didDocument = await resolver.resolve(verificationMethod);
+    const bucket = didDocument.publicKey || didDocument.assertionMethod;
+    bucket.forEach(publicKey => {
+      if (publicKey.id === verificationMethod) {
+        unlockedVerificationMethod = publicKey;
+      }
+    });
+  }
 
   if (!unlockedVerificationMethod) {
     throw new Error(`Can't find verification method for ${verificationMethod}`);
+  } else if (!unlockedVerificationMethod.privateKeyBase58) {
+    throw new Error(`No private key found, DID is likely locked: ${unlockedVerificationMethod}`);
   }
 
   return unlockedVerificationMethod;
@@ -73,7 +71,7 @@ async function handleIssueCredential(request, reply) {
     await dock.initKeyring();
 
     const defaultOptions = {
-      issuanceDate: '2019-12-11T03:50:55Z', // TODO: current date in this format
+      issuanceDate: new Date().toISOString(),
       proofPurpose: 'assertionMethod',
       issuer: 'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
       verificationMethod:
@@ -85,20 +83,21 @@ async function handleIssueCredential(request, reply) {
       throw new Error(`${options.proofPurpose} is not a supported proof purpose, must be 'assertionMethod' or 'authentication'`);
     }
 
-    // hack around static interp api
+    // Set verificationMethod as assertionMethod
     if (options.assertionMethod) {
       // eslint-disable-next-line
       options.verificationMethod = options.assertionMethod;
     }
 
-    // create and set keypair
+    // Create and set keypair
     const keyDoc = await getKeyDocFromOptions(options);
     const publicKey = new Uint8Array(b58.decode(keyDoc.publicKeyBase58));
     const secretKey = new Uint8Array(b58.decode(keyDoc.privateKeyBase58));
+    const keyType = 'ed25519';
 
     // TODO: make sdk method to help with this
     // like dock.createAccountFromKey(keyDoc);
-    const pair = createPair({ toSS58: dock.keyring.encodeAddress, type: 'ed25519' }, { publicKey, secretKey });
+    const pair = createPair({ toSS58: dock.keyring.encodeAddress, type: keyType }, { publicKey, secretKey });
     keyDoc.keypair = dock.keyring.addPair(pair);
 
     if (options.issuer && keyDoc.controller !== options.issuer) {
