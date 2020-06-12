@@ -7,7 +7,7 @@ const b58 = require('bs58');
 const { Ed25519KeyPair } = require('crypto-ld');
 const createPair = require('@polkadot/keyring/pair/index').default;
 const unlockedDIDs = require('../../helpers/unlocked-dids');
-const resolver = require('../../helpers/universal-resolver');
+const universalResolver = require('../../helpers/universal-resolver');
 
 // Gets a key pair from verification method, only supports Ed25519 for now
 async function getKeyFromVerificationMethod(verificationMethod) {
@@ -22,7 +22,7 @@ async function getKeyFromVerificationMethod(verificationMethod) {
     default:
       throw new Error(`No Key for: ${verificationMethod.type}`);
   }
-};
+}
 
 // Resolves a DID, must be unlocked, for issuing with
 async function getUnlockedVerificationMethod(verificationMethod, resolver) {
@@ -39,7 +39,7 @@ async function getUnlockedVerificationMethod(verificationMethod, resolver) {
   if (!unlockedVerificationMethod) {
     const didDocument = await resolver.resolve(verificationMethod);
     const bucket = didDocument.publicKey || didDocument.assertionMethod;
-    bucket.forEach(publicKey => {
+    bucket.forEach((publicKey) => {
       if (publicKey.id === verificationMethod) {
         unlockedVerificationMethod = publicKey;
       }
@@ -96,7 +96,7 @@ async function handleIssueCredential(request, reply) {
     }
 
     // Create and set keypair
-    const keyDoc = await getKeyDocFromOptions(options, resolver);
+    const keyDoc = await getKeyDocFromOptions(options, universalResolver);
     const publicKey = new Uint8Array(b58.decode(keyDoc.publicKeyBase58));
     const secretKey = new Uint8Array(b58.decode(keyDoc.privateKeyBase58));
     const keyType = 'ed25519';

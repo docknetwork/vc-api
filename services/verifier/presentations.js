@@ -48,8 +48,8 @@ async function handleVerifyPresentation(request, reply) {
     if (result.verified) {
       const checks = [];
       const results = (presentationResult && presentationResult.length) ? presentationResult : credentialResults;
-      results.forEach((result) => {
-        checks.push(getCheckType(result));
+      results.forEach((check) => {
+        checks.push(getCheckType(check));
       });
 
       reply.send({
@@ -59,9 +59,9 @@ async function handleVerifyPresentation(request, reply) {
       // Verification failed, populate list of failed checks
       const checks = [];
       const results = (presentationResult && presentationResult.length) ? presentationResult : credentialResults;
-      results.forEach((result) => {
+      results.forEach((check) => {
         if (!result.verified) {
-          checks.push(getCheckType(result));
+          checks.push(getCheckType(check));
         }
       });
 
