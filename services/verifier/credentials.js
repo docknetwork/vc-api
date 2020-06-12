@@ -9,8 +9,11 @@ const getCheckType = require('../../helpers/check-type');
 const universalResolver = require('../../helpers/universal-resolver');
 
 async function handleVerifyCredential(request, reply) {
+  // Create an instance of the Dock API
   const dock = new DockAPI();
   try {
+    // Try connect to the node
+    // not required for all verifications but is for some
     await dock.init({
       address: nodeAddress,
     });
@@ -18,6 +21,7 @@ async function handleVerifyCredential(request, reply) {
     console.error('Connecting to node failed', e);
   }
 
+  // Get options, credential and create a resolver
   const options = request.body.options || {};
   const { verifiableCredential } = request.body;
   const resolver = new MultiResolver({
@@ -25,6 +29,7 @@ async function handleVerifyCredential(request, reply) {
   }, universalResolver);
 
   try {
+    // Verify the credential
     const verifyResult = await verifyCredential(verifiableCredential, {
       resolver,
       compactProof: true,
@@ -33,6 +38,7 @@ async function handleVerifyCredential(request, reply) {
       revocationApi: { dock },
     });
 
+    // If verified, populate successful checks
     if (verifyResult.verified) {
       const checks = [];
       if (verifyResult.results) {
@@ -45,18 +51,17 @@ async function handleVerifyCredential(request, reply) {
         checks,
       });
     } else if (verifyResult.results) {
-      const failedChecks = [];
+      // Verification failed, populate list of failed checks
+      const checks = [];
       verifyResult.results.forEach((result) => {
         if (!result.verified) {
           const checkType = getCheckType(result);
           const checkData = {};
-
-          // Proof check
           if (result.proof) {
             checkData.verificationMethod = result.proof.verificationMethod;
           }
 
-          failedChecks.push({
+          checks.push({
             check: checkType,
             error: result.verified ? undefined : (result.error.message || result.error),
             ...checkData,
@@ -67,9 +72,10 @@ async function handleVerifyCredential(request, reply) {
       reply
         .code(400)
         .send({
-          checks: failedChecks,
+          checks,
         });
     } else {
+      // Error happened during verification
       reply
         .code(400)
         .send({
@@ -78,6 +84,7 @@ async function handleVerifyCredential(request, reply) {
         });
     }
   } catch (e) {
+    // Catch any input/sdk errors
     reply
       .code(400)
       .send({
@@ -86,13 +93,11 @@ async function handleVerifyCredential(request, reply) {
       });
   }
 
-  try {
-    await dock.disconnect();
-  } catch (e) {
-    console.error('Disconnect from node failed', e);
-  }
+  // Disconnect from the node
+  await dock.disconnect();
 }
 
+// Expose route info
 module.exports = function (fastify, opts, next) {
   fastify.post('/verifier/credentials', {
     schema: {

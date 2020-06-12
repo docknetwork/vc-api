@@ -9,8 +9,11 @@ const getCheckType = require('../../helpers/check-type');
 const universalResolver = require('../../helpers/universal-resolver');
 
 async function handleVerifyPresentation(request, reply) {
+  // Create an instance of the Dock API
   const dock = new DockAPI();
   try {
+    // Try connect to the node
+    // not required for all verifications but is for some
     await dock.init({
       address: nodeAddress,
     });
@@ -18,6 +21,7 @@ async function handleVerifyPresentation(request, reply) {
     console.error('Connecting to node failed', e);
   }
 
+  // Get options, presentation and create a resolver
   const options = request.body.options || {};
   const { verifiablePresentation } = request.body;
   const { challenge, domain } = options;
@@ -26,6 +30,7 @@ async function handleVerifyPresentation(request, reply) {
   }, universalResolver);
 
   try {
+    // Verify the presentation
     const result = await verifyPresentation(verifiablePresentation, {
       challenge,
       domain,
@@ -39,6 +44,7 @@ async function handleVerifyPresentation(request, reply) {
     const credentialResults = result.credentialResults.results;
     const presentationResult = result.presentationResult.results;
 
+    // If verified, populate successful checks
     if (result.verified) {
       const checks = [];
       const results = (presentationResult && presentationResult.length) ? presentationResult : credentialResults;
@@ -50,6 +56,7 @@ async function handleVerifyPresentation(request, reply) {
         checks,
       });
     } else {
+      // Verification failed, populate list of failed checks
       const checks = [];
       const results = (presentationResult && presentationResult.length) ? presentationResult : credentialResults;
       results.forEach((result) => {
@@ -66,6 +73,7 @@ async function handleVerifyPresentation(request, reply) {
         });
     }
   } catch (e) {
+    // Catch any input/sdk errors
     reply
       .code(400)
       .send({
@@ -74,13 +82,11 @@ async function handleVerifyPresentation(request, reply) {
       });
   }
 
-  try {
-    await dock.disconnect();
-  } catch (e) {
-    console.error('Disconnect from node failed', e);
-  }
+  // Disconnect from the node
+  await dock.disconnect();
 }
 
+// Expose route info
 module.exports = function (fastify, opts, next) {
   fastify.post('/verifier/presentations', {
     schema: {

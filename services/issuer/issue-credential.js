@@ -9,6 +9,7 @@ const createPair = require('@polkadot/keyring/pair/index').default;
 const unlockedDIDs = require('../../helpers/unlocked-dids');
 const resolver = require('../../helpers/universal-resolver');
 
+// Gets a key pair from verification method, only supports Ed25519 for now
 async function getKeyFromVerificationMethod(verificationMethod) {
   if (!verificationMethod) {
     throw new Error('No verificationMethod given');
@@ -23,6 +24,7 @@ async function getKeyFromVerificationMethod(verificationMethod) {
   }
 };
 
+// Resolves a DID, must be unlocked, for issuing with
 async function getUnlockedVerificationMethod(verificationMethod, resolver) {
   let unlockedVerificationMethod;
   Object.values(unlockedDIDs).forEach((didDocument) => {
@@ -53,6 +55,7 @@ async function getUnlockedVerificationMethod(verificationMethod, resolver) {
   return unlockedVerificationMethod;
 }
 
+// Takes options object and returns a keydoc for issuing
 const getKeyDocFromOptions = async (options, resolver) => {
   const vmFromProof = options.verificationMethod || options.assertionMethod;
   const verificationMethod = await getUnlockedVerificationMethod(vmFromProof, resolver);
@@ -66,9 +69,13 @@ const getKeyDocFromOptions = async (options, resolver) => {
 async function handleIssueCredential(request, reply) {
   const { credential } = request.body;
   try {
+    // Create an instance of dock api
+    // but don't connect, just initialize a keyring
     const dock = new DockAPI();
     await dock.initKeyring();
 
+    // Spec says we need to support no options when issuing
+    // so fallback to default unlocked DIDs and date
     const defaultOptions = {
       issuanceDate: new Date().toISOString(),
       proofPurpose: 'assertionMethod',
@@ -77,6 +84,7 @@ async function handleIssueCredential(request, reply) {
           'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
     };
 
+    // Ensure options is valid
     const options = Object.assign(defaultOptions, request.body.options || {});
     if (options.proofPurpose !== 'assertionMethod' && options.proofPurpose !== 'authentication') {
       throw new Error(`${options.proofPurpose} is not a supported proof purpose, must be 'assertionMethod' or 'authentication'`);
@@ -84,7 +92,6 @@ async function handleIssueCredential(request, reply) {
 
     // Set verificationMethod as assertionMethod
     if (options.assertionMethod) {
-      // eslint-disable-next-line
       options.verificationMethod = options.assertionMethod;
     }
 
@@ -94,27 +101,30 @@ async function handleIssueCredential(request, reply) {
     const secretKey = new Uint8Array(b58.decode(keyDoc.privateKeyBase58));
     const keyType = 'ed25519';
 
-    // TODO: make sdk method to help with this
-    // like dock.createAccountFromKey(keyDoc);
+    // TODO: make sdk method to help with this, eg: dock.createAccountFromKey(keyDoc);
     const pair = createPair({ toSS58: dock.keyring.encodeAddress, type: keyType }, { publicKey, secretKey });
     keyDoc.keypair = dock.keyring.addPair(pair);
 
+    // Ensure intended issuer matches key
     if (options.issuer && keyDoc.controller !== options.issuer) {
       throw new Error(`Supplied issuer ${options.issuer} did not match key controller (${keyDoc.controller})`);
     }
 
+    // Issue the credential
     const issuedCredential = await issueCredential(keyDoc, credential);
 
     reply
       .code(201)
       .send(issuedCredential);
   } catch (e) {
+    // Handle error during issuing
     reply
       .code(400)
       .send({ message: e.message });
   }
 }
 
+// Expose route info
 module.exports = function (fastify, opts, next) {
   fastify.post('/credentials/issueCredential', {
     schema: {
