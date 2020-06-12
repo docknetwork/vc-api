@@ -1,11 +1,12 @@
 // Import Dock SDK utils
+const { MultiResolver, DockResolver } = require('@docknetwork/sdk/resolver');
 const { verifyCredential } = require('@docknetwork/sdk/utils/vc');
 const { DockAPI } = require('@docknetwork/sdk');
 
 // Import helpers
 const nodeAddress = require('../../helpers/node-address');
 const getCheckType = require('../../helpers/check-type');
-const resolver = require('../../helpers/resolver');
+const universalResolver = require('../../helpers/universal-resolver');
 
 async function handleVerifyCredential(request, reply) {
   const dock = new DockAPI();
@@ -19,6 +20,9 @@ async function handleVerifyCredential(request, reply) {
 
   const options = request.body.options || {};
   const { verifiableCredential } = request.body;
+  const resolver = new MultiResolver({
+    dock: new DockResolver(dock),
+  }, universalResolver);
 
   try {
     const verifyResult = await verifyCredential(verifiableCredential, {

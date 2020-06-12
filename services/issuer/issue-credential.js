@@ -7,7 +7,7 @@ const b58 = require('bs58');
 const { Ed25519KeyPair } = require('crypto-ld');
 const createPair = require('@polkadot/keyring/pair/index').default;
 const unlockedDIDs = require('../../helpers/unlocked-dids');
-const resolver = require('../../helpers/resolver');
+const resolver = require('../../helpers/universal-resolver');
 
 async function getKeyFromVerificationMethod(verificationMethod) {
   if (!verificationMethod) {
