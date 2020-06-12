@@ -4,6 +4,8 @@ This repo contains a barebones implementation of the [W3 VC Data model](https://
 
 Optional routes are not supported currently. Intended to be compatible with the plugfest2020 test specification: https://github.com/w3c-ccg/vc-examples/
 
+Currently hosted at https://vcapi.dock.io/ - see example JSON requests to work with the API or the [Swagger Documentation](https://vcapi.dock.io/api/docs)
+
 Starting the server
 ===
 In dev mode:
