@@ -79,9 +79,8 @@ async function handleIssueCredential(request, reply) {
     const defaultOptions = {
       issuanceDate: new Date().toISOString(),
       proofPurpose: 'assertionMethod',
-      issuer: 'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
-      verificationMethod:
-          'did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd',
+      issuer: 'did:dock:5ENAMn7nCVtrnXRVBSptnx6m4MrzQRKiY5AyydigCDzwPXhN',
+      verificationMethod: 'did:dock:5ENAMn7nCVtrnXRVBSptnx6m4MrzQRKiY5AyydigCDzwPXhN#keys-1',
     };
 
     // Ensure options is valid
