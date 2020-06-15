@@ -1,0 +1,19 @@
+{
+  "@context": "https://www.w3.org/ns/did/v1",
+  "id": "did:dock:5ENAMn7nCVtrnXRVBSptnx6m4MrzQRKiY5AyydigCDzwPXhN",
+  "authentication": [
+    "did:dock:5ENAMn7nCVtrnXRVBSptnx6m4MrzQRKiY5AyydigCDzwPXhN#keys-1"
+  ],
+  "assertionMethod": [
+    "did:dock:5ENAMn7nCVtrnXRVBSptnx6m4MrzQRKiY5AyydigCDzwPXhN#keys-1"
+  ],
+  "publicKey": [
+    {
+      "id": "did:dock:5ENAMn7nCVtrnXRVBSptnx6m4MrzQRKiY5AyydigCDzwPXhN#keys-1",
+      "type": "Ed25519VerificationKey2018",
+      "controller": "did:dock:5ENAMn7nCVtrnXRVBSptnx6m4MrzQRKiY5AyydigCDzwPXhN",
+      "publicKeyBase58": "7Y4TFaQWv9hjF9coYfMFkHSXq1J6YthZUCd6LeNMhcFq",
+      "privateKeyBase58": "Ai9M7T5gfCA8tWaws3HaAUy4rsoQsRcVpabDywduw5qvuha8PDokx5z2QYdMwEA8XW1xNGrjHcbSxCnjgwFx7VQ"
+    }
+  ]
+}
