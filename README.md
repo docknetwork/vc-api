@@ -1,3 +1,5 @@
+Repo archived and not maintained. Not to be confused with the [Dock Certs API](https://certs.dock.io/)
+
 Dock VC API
 ===
 This repo contains a barebones implementation of the [W3 VC Data model](https://www.w3.org/TR/vc-data-model/) API routes for issuing and verification.
